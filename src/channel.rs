@@ -19,4 +19,14 @@ impl Channel {
             Channel::Channel4 => ("239.255.0.4", 5000),
         }
     }
+
+    pub fn get_id(&self) -> u8 {
+        match self {
+            Channel::ChannelBroadcast => 0,
+            Channel::Channel1 => 1,
+            Channel::Channel2 => 2,
+            Channel::Channel3 => 3,
+            Channel::Channel4 => 4,
+        }
+    }
 }

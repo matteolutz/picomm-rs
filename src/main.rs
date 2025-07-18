@@ -1,67 +1,35 @@
 use gstreamer::{
     self as gst,
-    prelude::{ElementExt, GstBinExtManual},
+    glib::object::ObjectExt,
+    prelude::{ElementExt, GstBinExt},
 };
+
+use crate::{channel::Channel, pipeline::PicommPipeline};
 
 mod channel;
 mod pipeline;
+mod volume;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     gst::init()?;
 
     println!("GStreamer version: {}", gst::version_string());
 
-    let pipeline = gst::Pipeline::new();
+    let picomm_pipeline = PicommPipeline::Receiver([
+        Channel::ChannelBroadcast,
+        Channel::Channel1,
+        Channel::Channel2,
+        Channel::Channel3,
+    ]);
 
-    let rtp_caps = gst::Caps::builder("application/x-rtp")
-        .field("clock-rate", 48000)
-        .field("media", "audio")
-        .field("encoding-name", "OPUS")
-        .build();
-
-    let src = gst::ElementFactory::make("udpsrc")
-        .property("multicast-group", "239.255.0.3")
-        .property("port", 5006)
-        .property("caps", rtp_caps)
-        .build()?;
-
-    let depay = gst::ElementFactory::make("rtpopusdepay").build()?;
-    let decode = gst::ElementFactory::make("opusdec").build()?;
-    let convert = gst::ElementFactory::make("audioconvert").build()?;
-    let resample = gst::ElementFactory::make("audioresample").build()?;
-    let queue = gst::ElementFactory::make("queue").build()?;
-    let sink = gst::ElementFactory::make("autoaudiosink").build()?;
-
-    pipeline.add_many([&src, &depay, &decode, &convert, &resample, &queue, &sink])?;
-    gst::Element::link_many([&src, &depay, &decode, &convert, &resample, &queue, &sink])?;
-
-    // src.link(&depay)?;
-
-    /*
-    let depay_weak = depay.downgrade();
-    src.connect_pad_added(move |_, src_pad| {
-        println!("new src pad triggered");
-
-        let Some(depay) = depay_weak.upgrade() else {
-            eprintln!("Failed to upgrade weak reference to depay element");
-            return;
-        };
-
-        let Some(pad) = depay.static_pad("sink") else {
-            eprintln!("Failed to request sink pad from depay element");
-            return;
-        };
-
-        if pad.is_linked() {
-            eprintln!("Pad is already linked, skipping link operation");
-            return;
-        }
-
-        if let Err(err) = src_pad.link(&pad) {
-            eprintln!("Failed to link source pad: {}", err);
-        }
-    });
-    */
+    let pipeline = picomm_pipeline.construct()?;
+    println!(
+        "volume 0: {}",
+        pipeline
+            .by_name("volume-0")
+            .unwrap()
+            .property::<f64>("volume")
+    );
 
     pipeline.set_state(gst::State::Playing)?;
 
