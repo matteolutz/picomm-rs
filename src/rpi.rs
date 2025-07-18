@@ -19,6 +19,14 @@ pub fn setup_oled() {
         .text_color(embedded_graphics::pixelcolor::BinaryColor::On)
         .build();
 
+    let logo_raw: embedded_graphics::image::ImageRaw<embedded_graphics::pixelcolor::BinaryColor> =
+        embedded_graphics::image::ImageRaw::new(include_bytes!("../assets/picomm-logo.raw"), 128);
+    let logo_img =
+        embedded_graphics::image::Image::new(&logo_raw, embedded_graphics::prelude::Point::zero());
+
+    logo_img.draw(&mut display).unwrap();
+
+    /*
     embedded_graphics::text::Text::with_baseline(
         "piComm",
         embedded_graphics::prelude::Point::zero(),
@@ -26,7 +34,7 @@ pub fn setup_oled() {
         embedded_graphics::text::Baseline::Top,
     )
     .draw(&mut display)
-    .unwrap();
+    .unwrap();*/
 
     display.flush().unwrap();
 }
