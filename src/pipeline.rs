@@ -102,7 +102,7 @@ impl PicommPipeline {
                     &local_volume,
                     &local_queue,
                 ])?;
-                local_volume.link(&mixer)?;
+                local_queue.link(&mixer)?;
 
                 let sink = gst::ElementFactory::make(get_audio_sink()).build()?;
                 sink.set_property("sync", false);
