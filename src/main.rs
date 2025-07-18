@@ -75,7 +75,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map(|&pin| gpio.get(pin).unwrap().into_input_pullup())
             .collect::<Vec<_>>();
 
-        for (idx, input_pin) in input_pins.iter().enumerate() {
+        for (idx, input_pin) in input_pins.iter_mut().enumerate() {
             input_pin.set_interrupt(
                 rppal::gpio::Trigger::FallingEdge,
                 Some(std::time::Duration::from_millis(1000)),
