@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .into_output();
 
             loop {
-                pin.toogle();
+                pin.toggle();
                 thread::sleep(std::time::Duration::from_millis(500));
             }
         });
