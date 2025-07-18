@@ -5,9 +5,10 @@ edition = "2024"
 
 [features]
 default = ["rpi"]
-rpi = ["dep:rppal", "dep:ssd1306"]
+rpi = ["dep:rppal", "dep:ssd1306", "dep:embedded-graphics"]
 
 [dependencies]
 rppal = { version = "0.22.1", optional = true, features = ["hal"] }
 gstreamer = "0.24.0"
 ssd1306 = { version = "0.10.0", optional = true }
+embedded-graphics = { version = "0.8.1", optional = true }

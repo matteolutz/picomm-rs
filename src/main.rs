@@ -74,7 +74,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     #[cfg(feature = "rpi")]
-    {}
+    {
+        rpi::setup_oled();
+        loop {}
+    }
 
     #[cfg(not(feature = "rpi"))]
     {
