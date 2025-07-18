@@ -87,12 +87,20 @@ impl PicommPipeline {
                     .property("volume", 1.0)
                     .property("mute", true)
                     .build()?;
-                pipeline.add_many([&local_src, &local_convert, &local_resample, &local_volume])?;
+                let local_queue = gst::ElementFactory::make("queue").build()?;
+                pipeline.add_many([
+                    &local_src,
+                    &local_convert,
+                    &local_resample,
+                    &local_volume,
+                    &local_queue,
+                ])?;
                 gst::Element::link_many([
                     &local_src,
                     &local_convert,
                     &local_resample,
                     &local_volume,
+                    &local_queue,
                 ])?;
                 local_volume.link(&mixer)?;
 
