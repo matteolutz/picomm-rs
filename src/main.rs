@@ -94,6 +94,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 std::thread::sleep(std::time::Duration::from_millis(100));
             }
 
+            println!("Button released, stopping transmission");
+
             pipeline.set_state(gst::State::Null).unwrap();
         }
     }
