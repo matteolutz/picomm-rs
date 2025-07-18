@@ -7,6 +7,13 @@ use gstreamer::{
 
 const NUM_CHANNELS: usize = 4;
 
+fn get_audio_src() -> &'static str {
+    #[cfg(feature = "rpi")]
+    return "alsasrc";
+
+    "autoaudiosrc"
+}
+
 #[derive(Debug, Clone)]
 pub enum PicommPipeline {
     Receiver([Channel; NUM_CHANNELS]),
@@ -69,7 +76,7 @@ impl PicommPipeline {
                     volume_handles.push(VolumeHandle::new(&volume));
                 }
 
-                let local_src = gst::ElementFactory::make("autoaudiosrc").build()?;
+                let local_src = gst::ElementFactory::make(get_audio_src()).build()?;
                 let local_convert = gst::ElementFactory::make("audioconvert").build()?;
                 let local_resample = gst::ElementFactory::make("audioresample").build()?;
                 let local_volume = gst::ElementFactory::make("volume")
@@ -106,7 +113,7 @@ impl PicommPipeline {
             Self::Transmitter(channel) => {
                 let (multicast_ip, multicast_port) = channel.get_multicast();
 
-                let src = gst::ElementFactory::make("autoaudiosrc").build()?;
+                let src = gst::ElementFactory::make(get_audio_src()).build()?;
                 let convert = gst::ElementFactory::make("audioconvert").build()?;
                 let resample = gst::ElementFactory::make("audioresample").build()?;
                 let encode = gst::ElementFactory::make("opusenc").build()?;
