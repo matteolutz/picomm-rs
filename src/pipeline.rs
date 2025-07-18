@@ -2,6 +2,7 @@ use crate::{channel::Channel, volume::VolumeHandle};
 
 use gstreamer::{
     self as gst,
+    glib::object::ObjectExt,
     prelude::{ElementExtManual, GstBinExt, GstBinExtManual},
 };
 
@@ -108,6 +109,8 @@ impl PicommPipeline {
                 local_queue.link(&mixer)?;
 
                 let sink = gst::ElementFactory::make(get_audio_sink()).build()?;
+                sink.set_property("sync", false);
+
                 pipeline.add(&sink)?;
                 mixer.link(&sink)?;
 
