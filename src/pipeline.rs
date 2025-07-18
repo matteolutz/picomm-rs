@@ -14,6 +14,13 @@ fn get_audio_src() -> &'static str {
     "autoaudiosrc"
 }
 
+fn get_audio_sink() -> &'static str {
+    #[cfg(feature = "rpi")]
+    return "pulsesink";
+
+    "autoaudiosink"
+}
+
 #[derive(Debug, Clone)]
 pub enum PicommPipeline {
     Receiver([Channel; NUM_CHANNELS]),
@@ -100,7 +107,7 @@ impl PicommPipeline {
                 ])?;
                 local_queue.link(&mixer)?;
 
-                let sink = gst::ElementFactory::make("autoaudiosink").build()?;
+                let sink = gst::ElementFactory::make(get_audio_sink()).build()?;
                 pipeline.add(&sink)?;
                 mixer.link(&sink)?;
 
@@ -124,23 +131,9 @@ impl PicommPipeline {
                     .property("auto-multicast", true)
                     .build()?;
 
-                let tee = gst::ElementFactory::make("tee").build()?;
-                let volume = gst::ElementFactory::make("volume")
-                    .name(format!("volume-{}", channel.get_id()))
-                    .property("volume", 1.0)
-                    .build()?;
-                let local_sink = gst::ElementFactory::make("autoaudiosink").build()?;
+                pipeline.add_many([&src, &convert, &resample, &encode, &pay, &udp_sink])?;
 
-                pipeline.add_many([
-                    &src, &convert, &resample, &encode, &pay, &udp_sink, &tee,
-                    &volume,
-                    // &local_sink,
-                ])?;
-
-                gst::Element::link_many([&src, &convert, &resample, &tee])?;
-
-                gst::Element::link_many([&tee, &encode, &pay, &udp_sink])?;
-                gst::Element::link_many([&tee, &volume /* , &local_sink*/])?;
+                gst::Element::link_many([&src, &convert, &resample, &encode, &pay, &udp_sink])?;
 
                 Ok((pipeline, None, None))
             }
