@@ -2,7 +2,6 @@ use crate::channel::Channel;
 
 use gstreamer::{
     self as gst,
-    glib::object::ObjectExt,
     prelude::{ElementExtManual, GstBinExt, GstBinExtManual},
 };
 

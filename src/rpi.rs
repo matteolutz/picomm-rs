@@ -1,5 +1,7 @@
 use ssd1306::mode::DisplayConfig;
 
+use embedded_graphics::Drawable;
+
 pub fn setup_oled() {
     let i2c = rppal::i2c::I2c::new().unwrap();
     let interface = ssd1306::I2CDisplayInterface::new(i2c);
