@@ -82,6 +82,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
         }
 
+        let input_pins = input_pins.iter().collect::<Vec<_>>();
+
         loop {
             let Some((pin, _)) = gpio.poll_interrupts(&input_pins, true, None).unwrap() else {
                 continue;
@@ -92,7 +94,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .position(|p| p.pin() == pin.pin())
                 .expect("Pin not found in input_pins");
 
-            let channel = CHANNELS[idx];
+            let channel = CHANNELS[channel_idx];
             let transmission_stream = PicommPipeline::Transmitter(channel);
             let (pipeline, _) = transmission_stream.construct().unwrap();
 
