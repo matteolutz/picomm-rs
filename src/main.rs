@@ -13,6 +13,22 @@ mod volume;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     gst::init()?;
 
+    #[cfg(feature = "rpi")]
+    {
+        thread::spawn(|| {
+            let mut pin = rppal::gpio::Gpio::new()
+                .unwrap()
+                .get(23)
+                .unwrap()
+                .into_output();
+
+            loop {
+                pin.toogle();
+                thread::sleep(std::time::Duration::from_millis(500));
+            }
+        });
+    }
+
     println!("GStreamer version: {}", gst::version_string());
 
     let picomm_pipeline = PicommPipeline::Receiver([
