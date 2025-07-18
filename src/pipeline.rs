@@ -71,42 +71,23 @@ impl PicommPipeline {
                         .name(format!("volume-{}", channel.get_id()))
                         .property("volume", 1.0)
                         .build()?;
-                    let queue = gst::ElementFactory::make("queue").build()?;
 
-                    pipeline
-                        .add_many([&src, &depay, &decode, &convert, &resample, &volume, &queue])?;
-                    gst::Element::link_many([
-                        &src, &depay, &decode, &convert, &resample, &volume, &queue,
-                    ])?;
+                    pipeline.add_many([&src, &depay, &decode, &convert, &resample, &volume])?;
+                    gst::Element::link_many([&src, &depay, &decode, &convert, &resample, &volume])?;
 
-                    queue.link(&mixer)?;
+                    volume.link(&mixer)?;
 
                     volume_handles.push(VolumeHandle::new(&volume));
                 }
 
                 let local_src = gst::ElementFactory::make(get_audio_src()).build()?;
-                let local_convert = gst::ElementFactory::make("audioconvert").build()?;
-                let local_resample = gst::ElementFactory::make("audioresample").build()?;
                 let local_volume = gst::ElementFactory::make("volume")
                     .property("volume", 1.0)
                     .property("mute", true)
                     .build()?;
-                let local_queue = gst::ElementFactory::make("queue").build()?;
-                pipeline.add_many([
-                    &local_src,
-                    &local_convert,
-                    &local_resample,
-                    &local_volume,
-                    &local_queue,
-                ])?;
-                gst::Element::link_many([
-                    &local_src,
-                    &local_convert,
-                    &local_resample,
-                    &local_volume,
-                    &local_queue,
-                ])?;
-                local_queue.link(&mixer)?;
+                pipeline.add_many([&local_src, &local_volume])?;
+                gst::Element::link_many([&local_src, &local_volume])?;
+                local_volume.link(&mixer)?;
 
                 let sink = gst::ElementFactory::make(get_audio_sink()).build()?;
                 sink.set_property("sync", false);
