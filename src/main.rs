@@ -26,22 +26,6 @@ const CHANNEL_BUTTONS: [u8; N_CHANNELS] = [17, 27, 22, 23];
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     gst::init()?;
 
-    #[cfg(feature = "rpi")]
-    {
-        std::thread::spawn(|| {
-            let mut pin = rppal::gpio::Gpio::new()
-                .unwrap()
-                .get(23)
-                .unwrap()
-                .into_output();
-
-            loop {
-                pin.toggle();
-                std::thread::sleep(std::time::Duration::from_millis(500));
-            }
-        });
-    }
-
     println!("GStreamer version: {}", gst::version_string());
 
     let picomm_pipeline = PicommPipeline::Receiver(CHANNELS);
