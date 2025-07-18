@@ -17,7 +17,7 @@ pub fn setup_oled() {
         .text_color(embedded_graphics::pixelcolor::BinaryColor::On)
         .build();
 
-    embedded_graphics::text::Text::with_alignment(
+    embedded_graphics::text::Text::with_baseline(
         "piComm",
         embedded_graphics::prelude::Point::zero(),
         text_style,
