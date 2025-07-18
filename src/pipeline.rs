@@ -81,12 +81,19 @@ impl PicommPipeline {
                 }
 
                 let local_src = gst::ElementFactory::make(get_audio_src()).build()?;
+                let local_convert = gst::ElementFactory::make("audioconvert").build()?;
+                let local_resample = gst::ElementFactory::make("audioresample").build()?;
                 let local_volume = gst::ElementFactory::make("volume")
                     .property("volume", 1.0)
                     .property("mute", true)
                     .build()?;
-                pipeline.add_many([&local_src, &local_volume])?;
-                gst::Element::link_many([&local_src, &local_volume])?;
+                pipeline.add_many([&local_src, &local_convert, &local_resample, &local_volume])?;
+                gst::Element::link_many([
+                    &local_src,
+                    &local_convert,
+                    &local_resample,
+                    &local_volume,
+                ])?;
                 local_volume.link(&mixer)?;
 
                 let sink = gst::ElementFactory::make(get_audio_sink()).build()?;
