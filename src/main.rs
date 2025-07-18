@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     #[cfg(feature = "rpi")]
     {
-        thread::spawn(|| {
+        std::thread::spawn(|| {
             let mut pin = rppal::gpio::Gpio::new()
                 .unwrap()
                 .get(23)
@@ -24,7 +24,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             loop {
                 pin.toggle();
-                thread::sleep(std::time::Duration::from_millis(500));
+                std::thread::sleep(std::time::Duration::from_millis(500));
             }
         });
     }
