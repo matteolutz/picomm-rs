@@ -31,6 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let picomm_pipeline = PicommPipeline::Receiver(CHANNELS);
 
     let (pipeline, remote_volume_handles, _) = picomm_pipeline.construct().unwrap();
+    let remote_volume_handles = remote_volume_handles.unwrap();
 
     pipeline.set_state(gst::State::Playing).unwrap();
 
@@ -85,7 +86,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let channel = CHANNELS[channel_idx];
             let transmission_stream = PicommPipeline::Transmitter(channel);
-            let (pipeline, _) = transmission_stream.construct().unwrap();
+            let (pipeline, _, _) = transmission_stream.construct().unwrap();
 
             pipeline.set_state(gst::State::Playing).unwrap();
 
