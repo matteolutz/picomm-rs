@@ -64,10 +64,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .collect::<Vec<_>>();
 
         for (idx, input_pin) in input_pins.iter_mut().enumerate() {
-            input_pin.set_interrupt(
-                rppal::gpio::Trigger::FallingEdge,
-                Some(std::time::Duration::from_millis(1000)),
-            );
+            input_pin.set_interrupt(rppal::gpio::Trigger::FallingEdge, None);
         }
 
         let input_pins = input_pins.iter().collect::<Vec<_>>();
