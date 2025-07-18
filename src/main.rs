@@ -30,8 +30,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let picomm_pipeline = PicommPipeline::Receiver(CHANNELS);
 
-    let (pipeline, remote_volume_handles, _) = picomm_pipeline.construct().unwrap();
-    let remote_volume_handles = remote_volume_handles.unwrap();
+    let (pipeline, Some(remote_volume_handles), Some(local_volume_handle)) =
+        picomm_pipeline.construct().unwrap()
+    else {
+        return Err("Failed to construct pipeline".into());
+    };
 
     pipeline.set_state(gst::State::Playing).unwrap();
 
@@ -83,6 +86,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .expect("Pin not found in input_pins");
 
             remote_volume_handles[channel_idx].mute();
+            local_volume_handle.unmute();
 
             let channel = CHANNELS[channel_idx];
             let transmission_stream = PicommPipeline::Transmitter(channel);
@@ -101,6 +105,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             pipeline.set_state(gst::State::Null).unwrap();
             remote_volume_handles[channel_idx].unmute();
+            local_volume_handle.mute();
         }
     }
 

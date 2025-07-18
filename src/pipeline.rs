@@ -74,6 +74,7 @@ impl PicommPipeline {
                 let local_resample = gst::ElementFactory::make("audioresample").build()?;
                 let local_volume = gst::ElementFactory::make("volume")
                     .property("volume", 1.0)
+                    .property("mute", true)
                     .build()?;
                 let local_queue = gst::ElementFactory::make("queue").build()?;
                 pipeline.add_many([
