@@ -16,8 +16,14 @@ pub enum PicommPipeline {
 impl PicommPipeline {
     pub fn construct(
         self,
-    ) -> Result<(gst::Pipeline, Option<[VolumeHandle; NUM_CHANNELS]>), Box<dyn std::error::Error>>
-    {
+    ) -> Result<
+        (
+            gst::Pipeline,
+            Option<[VolumeHandle; NUM_CHANNELS]>,
+            Option<VolumeHandle>,
+        ),
+        Box<dyn std::error::Error>,
+    > {
         let pipeline = gst::Pipeline::new();
 
         match self {
@@ -63,11 +69,38 @@ impl PicommPipeline {
                     volume_handles.push(VolumeHandle::new(&volume));
                 }
 
+                let local_src = gst::ElementFactory::make("autoaudiosrc").build()?;
+                let local_convert = gst::ElementFactory::make("audioconvert").build()?;
+                let local_resample = gst::ElementFactory::make("audioresample").build()?;
+                let local_volume = gst::ElementFactory::make("volume")
+                    .property("volume", 1.0)
+                    .build()?;
+                let local_queue = gst::ElementFactory::make("queue").build()?;
+                pipeline.add_many([
+                    &local_src,
+                    &local_convert,
+                    &local_resample,
+                    &local_volume,
+                    &local_queue,
+                ])?;
+                gst::Element::link_many([
+                    &local_src,
+                    &local_convert,
+                    &local_resample,
+                    &local_volume,
+                    &local_queue,
+                ])?;
+                local_queue.link(&mixer)?;
+
                 let sink = gst::ElementFactory::make("autoaudiosink").build()?;
                 pipeline.add(&sink)?;
                 mixer.link(&sink)?;
 
-                Ok((pipeline, volume_handles.try_into().ok()))
+                Ok((
+                    pipeline,
+                    volume_handles.try_into().ok(),
+                    Some(VolumeHandle::new(&local_volume)),
+                ))
             }
             Self::Transmitter(channel) => {
                 let (multicast_ip, multicast_port) = channel.get_multicast();
@@ -91,23 +124,17 @@ impl PicommPipeline {
                 let local_sink = gst::ElementFactory::make("autoaudiosink").build()?;
 
                 pipeline.add_many([
-                    &src,
-                    &convert,
-                    &resample,
-                    &encode,
-                    &pay,
-                    &udp_sink,
-                    &tee,
+                    &src, &convert, &resample, &encode, &pay, &udp_sink, &tee,
                     &volume,
-                    &local_sink,
+                    // &local_sink,
                 ])?;
 
                 gst::Element::link_many([&src, &convert, &resample, &tee])?;
 
                 gst::Element::link_many([&tee, &encode, &pay, &udp_sink])?;
-                gst::Element::link_many([&tee, &volume, &local_sink])?;
+                gst::Element::link_many([&tee, &volume /* , &local_sink*/])?;
 
-                Ok((pipeline, None))
+                Ok((pipeline, None, None))
             }
         }
     }

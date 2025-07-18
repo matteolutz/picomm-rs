@@ -30,7 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let picomm_pipeline = PicommPipeline::Receiver(CHANNELS);
 
-    let (pipeline, _volume_handles) = picomm_pipeline.construct().unwrap();
+    let (pipeline, remote_volume_handles, _) = picomm_pipeline.construct().unwrap();
 
     pipeline.set_state(gst::State::Playing).unwrap();
 
@@ -81,6 +81,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .position(|p| p.pin() == pin.pin())
                 .expect("Pin not found in input_pins");
 
+            remote_volume_handles[channel_idx].mute();
+
             let channel = CHANNELS[channel_idx];
             let transmission_stream = PicommPipeline::Transmitter(channel);
             let (pipeline, _) = transmission_stream.construct().unwrap();
@@ -97,6 +99,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("Button released, stopping transmission");
 
             pipeline.set_state(gst::State::Null).unwrap();
+            remote_volume_handles[channel_idx].unmute();
         }
     }
 
