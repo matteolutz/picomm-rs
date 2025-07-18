@@ -1,18 +1,23 @@
-use crate::channel::Channel;
+use crate::{channel::Channel, volume::VolumeHandle};
 
 use gstreamer::{
     self as gst,
     prelude::{ElementExtManual, GstBinExt, GstBinExtManual},
 };
 
+const NUM_CHANNELS: usize = 4;
+
 #[derive(Clone)]
 pub enum PicommPipeline {
-    Receiver([Channel; 4]),
+    Receiver([Channel; NUM_CHANNELS]),
     Transmitter(Channel),
 }
 
 impl PicommPipeline {
-    pub fn construct(self) -> Result<gst::Pipeline, Box<dyn std::error::Error>> {
+    pub fn construct(
+        self,
+    ) -> Result<(gst::Pipeline, Option<[VolumeHandle; NUM_CHANNELS]>), Box<dyn std::error::Error>>
+    {
         let pipeline = gst::Pipeline::new();
 
         match self {
@@ -25,6 +30,8 @@ impl PicommPipeline {
 
                 let mixer = gst::ElementFactory::make("audiomixer").build()?;
                 pipeline.add(&mixer)?;
+
+                let mut volume_handles = Vec::with_capacity(NUM_CHANNELS);
 
                 for channel in channels {
                     let (multicast_ip, multicast_port) = channel.get_multicast();
@@ -52,11 +59,15 @@ impl PicommPipeline {
                     ])?;
 
                     queue.link(&mixer)?;
+
+                    volume_handles.push(VolumeHandle::new(&volume));
                 }
 
                 let sink = gst::ElementFactory::make("autoaudiosink").build()?;
                 pipeline.add(&sink)?;
                 mixer.link(&sink)?;
+
+                Ok((pipeline, volume_handles.try_into().ok()))
             }
             Self::Transmitter(channel) => {
                 let (multicast_ip, multicast_port) = channel.get_multicast();
@@ -95,9 +106,9 @@ impl PicommPipeline {
 
                 gst::Element::link_many([&tee, &encode, &pay, &udp_sink])?;
                 gst::Element::link_many([&tee, &volume, &local_sink])?;
+
+                Ok((pipeline, None))
             }
         }
-
-        Ok(pipeline)
     }
 }

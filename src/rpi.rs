@@ -34,7 +34,8 @@ pub fn setup_oled() {
         embedded_graphics::text::Baseline::Top,
     )
     .draw(&mut display)
-    .unwrap();*/
+    .unwrap();
+    */
 
     display.flush().unwrap();
 }

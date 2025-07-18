@@ -44,20 +44,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("GStreamer version: {}", gst::version_string());
 
-    std::thread::spawn(|| {
-        let picomm_pipeline = PicommPipeline::Receiver(CHANNELS);
+    let picomm_pipeline = PicommPipeline::Receiver(CHANNELS);
 
-        let pipeline = picomm_pipeline.construct().unwrap();
-        println!(
-            "volume 0: {}",
-            pipeline
-                .by_name("volume-0")
-                .unwrap()
-                .property::<f64>("volume")
-        );
+    let (pipeline, _volume_handles) = picomm_pipeline.construct().unwrap();
 
-        pipeline.set_state(gst::State::Playing).unwrap();
+    pipeline.set_state(gst::State::Playing).unwrap();
 
+    #[cfg(not(feature = "rpi"))]
+    {
         let bus = pipeline.bus().unwrap();
         for msg in bus.iter_timed(gst::ClockTime::NONE) {
             match msg.view() {
@@ -69,18 +63,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 _ => (),
             }
         }
-
-        pipeline.set_state(gst::State::Null).unwrap();
-    });
+    }
 
     #[cfg(feature = "rpi")]
     {
         rpi::setup_oled();
+        let mut input_pins = CHANNEL_BUTTONS
+            .iter()
+            .map(|&pin| rppal::gpio::Gpio::new()?.get(pin)?.into_input_pullup())
+            .collect::<Vec<_>>();
+
+        for (idx, input_pin) in input_pins.iter().enumerate() {
+            input_pin.set_async_interrupt(
+                rppal::gpio::Trigger::FallingEdge,
+                Some(std::time::Duration::from_millis(1000)),
+                || {
+                    let channel = CHANNELS[idx];
+                    let transmission_stream = PicommPipeline::Transmitter(channel);
+                    let (pipeline, _) = transmission_stream.construct().unwrap();
+
+                    pipeline.set_state(gst::State::Playing).unwrap();
+
+                    println!("Transmitting on channel: {:?}", channel);
+
+                    // wait for button to be released
+                    while input_pin.is_low() {
+                        std::thread::sleep(std::time::Duration::from_millis(100));
+                    }
+
+                    pipeline.set_state(gst::State::Null).unwrap();
+                },
+            );
+        }
+
         loop {}
     }
 
-    #[cfg(not(feature = "rpi"))]
-    {
-        loop {}
-    }
+    pipeline.set_state(gst::State::Null).unwrap();
+
+    Ok(())
 }
