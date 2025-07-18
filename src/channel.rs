@@ -1,4 +1,4 @@
-#[derive(Copy, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq)]
 pub enum Channel {
     #[default]
     ChannelBroadcast,

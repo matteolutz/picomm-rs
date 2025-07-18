@@ -21,7 +21,7 @@ const CHANNELS: [Channel; N_CHANNELS] = [
     Channel::Channel2,
     Channel::Channel3,
 ];
-const CHANNEL_BUTTONS: [u32; N_CHANNELS] = [17, 27, 22, 23];
+const CHANNEL_BUTTONS: [u8; N_CHANNELS] = [17, 27, 22, 23];
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     gst::init()?;

@@ -7,7 +7,7 @@ use gstreamer::{
 
 const NUM_CHANNELS: usize = 4;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum PicommPipeline {
     Receiver([Channel; NUM_CHANNELS]),
     Transmitter(Channel),
