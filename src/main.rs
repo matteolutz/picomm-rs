@@ -70,14 +70,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         rpi::setup_oled();
         let mut input_pins = CHANNEL_BUTTONS
             .iter()
-            .map(|&pin| rppal::gpio::Gpio::new()?.get(pin)?.into_input_pullup())
+            .map(|&pin| {
+                rppal::gpio::Gpio::new()
+                    .unwrap()
+                    .get(pin)
+                    .unwrap()
+                    .into_input_pullup()
+            })
             .collect::<Vec<_>>();
 
         for (idx, input_pin) in input_pins.iter().enumerate() {
             input_pin.set_async_interrupt(
                 rppal::gpio::Trigger::FallingEdge,
                 Some(std::time::Duration::from_millis(1000)),
-                || {
+                |_| {
                     let channel = CHANNELS[idx];
                     let transmission_stream = PicommPipeline::Transmitter(channel);
                     let (pipeline, _) = transmission_stream.construct().unwrap();
