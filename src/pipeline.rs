@@ -9,6 +9,7 @@ use gstreamer::{
 #[derive(Clone)]
 pub enum PicommPipeline {
     Receiver([Channel; 4]),
+    Transmitter(Channel),
 }
 
 impl PicommPipeline {
@@ -57,6 +58,44 @@ impl PicommPipeline {
                 let sink = gst::ElementFactory::make("autoaudiosink").build()?;
                 pipeline.add(&sink)?;
                 mixer.link(&sink)?;
+            }
+            Self::Transmitter(channel) => {
+                let (multicast_ip, multicast_port) = channel.get_multicast();
+
+                let src = gst::ElementFactory::make("autoaudiosrc").build()?;
+                let convert = gst::ElementFactory::make("audioconvert").build()?;
+                let resample = gst::ElementFactory::make("audioresample").build()?;
+                let encode = gst::ElementFactory::make("opusenc").build()?;
+                let pay = gst::ElementFactory::make("rtpopuspay").build()?;
+                let udp_sink = gst::ElementFactory::make("udpsink")
+                    .property("host", multicast_ip)
+                    .property("port", multicast_port as i32)
+                    .property("auto-multicast", true)
+                    .build()?;
+
+                let tee = gst::ElementFactory::make("tee").build()?;
+                let volume = gst::ElementFactory::make("volume")
+                    .name(format!("volume-{}", channel.get_id()))
+                    .property("volume", 1.0)
+                    .build()?;
+                let local_sink = gst::ElementFactory::make("autoaudiosink").build()?;
+
+                pipeline.add_many([
+                    &src,
+                    &convert,
+                    &resample,
+                    &encode,
+                    &pay,
+                    &udp_sink,
+                    &tee,
+                    &volume,
+                    &local_sink,
+                ])?;
+
+                gst::Element::link_many([&src, &convert, &resample, &tee])?;
+
+                gst::Element::link_many([&tee, &encode, &pay, &udp_sink])?;
+                gst::Element::link_many([&tee, &volume, &local_sink])?;
             }
         }
 

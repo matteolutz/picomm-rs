@@ -8,7 +8,20 @@ use crate::{channel::Channel, pipeline::PicommPipeline};
 
 mod channel;
 mod pipeline;
+
+#[cfg(feature = "rpi")]
+mod rpi;
+
 mod volume;
+
+const N_CHANNELS: usize = 4;
+const CHANNELS: [Channel; N_CHANNELS] = [
+    Channel::ChannelBroadcast,
+    Channel::Channel1,
+    Channel::Channel2,
+    Channel::Channel3,
+];
+const CHANNEL_BUTTONS: [u32; N_CHANNELS] = [17, 27, 22, 23];
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     gst::init()?;
@@ -31,37 +44,40 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("GStreamer version: {}", gst::version_string());
 
-    let picomm_pipeline = PicommPipeline::Receiver([
-        Channel::ChannelBroadcast,
-        Channel::Channel1,
-        Channel::Channel2,
-        Channel::Channel3,
-    ]);
+    std::thread::spawn(|| {
+        let picomm_pipeline = PicommPipeline::Receiver(CHANNELS);
 
-    let pipeline = picomm_pipeline.construct()?;
-    println!(
-        "volume 0: {}",
-        pipeline
-            .by_name("volume-0")
-            .unwrap()
-            .property::<f64>("volume")
-    );
+        let pipeline = picomm_pipeline.construct().unwrap();
+        println!(
+            "volume 0: {}",
+            pipeline
+                .by_name("volume-0")
+                .unwrap()
+                .property::<f64>("volume")
+        );
 
-    pipeline.set_state(gst::State::Playing)?;
+        pipeline.set_state(gst::State::Playing).unwrap();
 
-    let bus = pipeline.bus().unwrap();
-    for msg in bus.iter_timed(gst::ClockTime::NONE) {
-        match msg.view() {
-            gst::MessageView::Eos(..) => break,
-            gst::MessageView::Error(err) => {
-                eprintln!("Error: {:?}", err.debug());
-                break;
+        let bus = pipeline.bus().unwrap();
+        for msg in bus.iter_timed(gst::ClockTime::NONE) {
+            match msg.view() {
+                gst::MessageView::Eos(..) => break,
+                gst::MessageView::Error(err) => {
+                    eprintln!("Error: {:?}", err.debug());
+                    break;
+                }
+                _ => (),
             }
-            _ => (),
         }
+
+        pipeline.set_state(gst::State::Null).unwrap();
+    });
+
+    #[cfg(feature = "rpi")]
+    {}
+
+    #[cfg(not(feature = "rpi"))]
+    {
+        loop {}
     }
-
-    pipeline.set_state(gst::State::Null)?;
-
-    Ok(())
 }
