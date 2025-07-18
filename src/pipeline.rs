@@ -9,7 +9,7 @@ const NUM_CHANNELS: usize = 4;
 
 fn get_audio_src() -> &'static str {
     #[cfg(feature = "rpi")]
-    return "alsasrc";
+    return "pulsesrc";
 
     "autoaudiosrc"
 }
