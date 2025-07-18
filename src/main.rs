@@ -68,10 +68,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         let input_pins = input_pins.iter().collect::<Vec<_>>();
 
+        println!("waiting for button presses");
         loop {
             let Some((pin, _)) = gpio.poll_interrupts(&input_pins, true, None).unwrap() else {
                 continue;
             };
+
+            println!("Button pressed on pin: {}", pin.pin());
 
             let channel_idx = input_pins
                 .iter()
