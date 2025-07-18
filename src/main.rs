@@ -74,7 +74,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         println!("waiting for button presses");
         loop {
-            let Some((pin, _)) = gpio.poll_interrupts(&input_pins, true, None).unwrap() else {
+            let Some((pin, _)) = gpio.poll_interrupts(&input_pins, false, None).unwrap() else {
                 continue;
             };
 
